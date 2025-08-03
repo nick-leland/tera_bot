@@ -70,6 +70,13 @@ def display_game_data(game_data):
         print("No game data available")
         return
     
+    # Debug: Print raw player data to see what we're getting
+    if game_data.get('player'):
+        print("DEBUG - Raw player data:")
+        print(f"  Position: {game_data['player'].get('position')}")
+        print(f"  Direction: {game_data['player'].get('direction')}")
+        print()
+    
     # Player Information
     print("PLAYER INFORMATION")
     print("-" * 30)
@@ -138,9 +145,26 @@ def monitor_game_data():
     print("Starting TERA Game Data Monitor...")
     print("Connecting to Python Bridge...")
     
+    last_position = None
+    last_direction = None
+    
     try:
         while True:
             game_data = bridge.get_game_data()
+            
+            # Check if position/direction changed
+            if game_data and game_data.get('player'):
+                current_position = game_data['player'].get('position')
+                current_direction = game_data['player'].get('direction')
+                
+                if current_position != last_position:
+                    print(f"POSITION CHANGED: {last_position} -> {current_position}")
+                    last_position = current_position
+                
+                if current_direction != last_direction:
+                    print(f"DIRECTION CHANGED: {last_direction} -> {current_direction}")
+                    last_direction = current_direction
+            
             display_game_data(game_data)
             time.sleep(1)  # Update every second
             

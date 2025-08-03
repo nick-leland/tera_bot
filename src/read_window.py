@@ -8,15 +8,9 @@ import win32ui
 import win32com.client
 import pythoncom
 from win32con import EVENT_SYSTEM_FOREGROUND
-import win32con
-import win32gui
-import win32api
 import time
 import threading
 
-import win32con
-import win32gui
-import win32api
 from ctypes import windll, WINFUNCTYPE, c_void_p, c_int, c_uint, c_ulong
 from ctypes.wintypes import MSG
 
@@ -43,11 +37,11 @@ def get_window_info(hwnd):
     try:
         title = win32gui.GetWindowText(hwnd)
         class_name = win32gui.GetClassName(hwnd)
-        
+
         # Get window style to determine window type
         style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
         ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-        
+
         # Determine window type based on styles
         window_type = "Unknown"
         if style & win32con.WS_POPUP:
@@ -212,8 +206,3 @@ if __name__ == "__main__":
         print("\nShutting down...")
         if hook:
             user32.UnhookWinEvent(hook)
-
-
-
-
-
