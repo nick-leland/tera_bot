@@ -17,7 +17,7 @@ from ctypes.wintypes import MSG
 
 def is_tera_window(window_title):
     """Check if the window title is related to TERA"""
-    tera_windows = ["TERA", "TERA Launcher", "TERA Starscape"]
+    tera_windows = ["TERA"]
     return any(tera in window_title for tera in tera_windows)
 
 
@@ -29,6 +29,7 @@ def get_window_size(hwnd):
         height = rect[3] - rect[1]  # bottom - top
         return width, height
     except Exception as e:
+        print(f"Error getting window size: {e}")
         return 0, 0
 
 
@@ -58,10 +59,10 @@ def get_window_info(hwnd):
             window_type = "Application Window"
         else:
             window_type = "Standard Window"
-        
+
         # Check if it's visible
         is_visible = win32gui.IsWindowVisible(hwnd)
-        
+
         return {
             'hwnd': hwnd,
             'title': title,
@@ -82,6 +83,7 @@ def get_window_info(hwnd):
             'ex_style': 0
         }
 
+
 def get_window_name(hwnd):
     return win32gui.GetWindowText(hwnd)
 
@@ -101,25 +103,22 @@ def callback(hWinEventHook, event, hwnd, idObject, idChild, dwEventThread, dwmsE
     if hwnd:
         window_title = get_window_name(hwnd)
         width, height = get_window_size(hwnd)
-        if is_tera_window(window_title):
-            print(f"Now in TERA ({width}x{height})")
-        else:
-            print(f"Not in Tera - Current: {window_title} ({width}x{height})")
+        print(f"Current: {window_title} ({width}x{height})")
 
 
 def poll_active_window():
     """Polling function to continuously check active window"""
     last_hwnd = None
     last_tera_status = None
-    
+
     while True:
         try:
             current_hwnd = win32gui.GetForegroundWindow()
-            
+
             if current_hwnd != last_hwnd and current_hwnd:
                 window_title = get_window_name(current_hwnd)
                 current_tera_status = is_tera_window(window_title)
-                
+
                 # Only print if status changed
                 if current_tera_status != last_tera_status:
                     width, height = get_window_size(current_hwnd)
@@ -128,52 +127,30 @@ def poll_active_window():
                     else:
                         print(f"Not in Tera - Current: {window_title} ({width}x{height})")
                     last_tera_status = current_tera_status
-                
+
                 last_hwnd = current_hwnd
-            
+
             time.sleep(0.5)  # Poll every 500ms
-            
+
         except Exception as e:
             print(f"Polling error: {e}")
             time.sleep(1)
-
-
-def enum_windows_callback(hwnd, windows):
-    """Callback for enumerating all windows"""
-    if win32gui.IsWindowVisible(hwnd):
-        window_info = get_window_info(hwnd)
-        if window_info['title']:  # Only add windows with titles
-            windows.append(window_info)
-    return True
-
-
-def list_all_windows():
-    """List all visible windows"""
-    windows = []
-    win32gui.EnumWindows(enum_windows_callback, windows)
-    
-    print("=== ALL VISIBLE WINDOWS ===")
-    for window_info in windows:
-        print_window_info(window_info)
 
 
 if __name__ == "__main__":
     print("TERA Window Monitor Started")
     print("Press Ctrl+C to exit")
     print("==================================================")
-    
+
     # Check initial window status
     current_hwnd = win32gui.GetForegroundWindow()
     current_window = get_window_name(current_hwnd)
     width, height = get_window_size(current_hwnd)
-    if is_tera_window(current_window):
-        print(f"Now in TERA ({width}x{height})")
-    else:
-        print(f"Not in Tera - Current: {current_window} ({width}x{height})")
-    
+    print(f"Current: {current_window} ({width}x{height})")
+
     # Start polling thread poll_thread = threading.Thread(target=poll_active_window, daemon=True) poll_thread.start()
     user32 = windll.user32
-    
+
     WinEventProcType = WINFUNCTYPE(
         None,  # Return type (void)
         c_void_p,  # hWinEventHook
@@ -184,7 +161,7 @@ if __name__ == "__main__":
         c_uint,    # dwEventThread
         c_ulong    # dwmsEventTime
     )
-    
+
     # Create the callback function
     callback_func = WinEventProcType(callback)
 
@@ -202,6 +179,13 @@ if __name__ == "__main__":
     try:
         while True:
             time.sleep(1)  # Keep the main thread alive
+            compare_hwnd = win32gui.GetForegroundWindow()
+            compare_window = get_window_name(compare_hwnd)
+            if current_window != compare_window:
+                current_window = get_window_name(compare_hwnd)
+                width, height = get_window_size(compare_hwnd)
+                print(f"Current: {current_window} ({width}x{height})")
+
     except KeyboardInterrupt:
         print("\nShutting down...")
         if hook:
